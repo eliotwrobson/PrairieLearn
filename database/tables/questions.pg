@@ -18,6 +18,7 @@ columns
     partial_credit: boolean default true
     qid: text
     single_variant: boolean default false
+    hide_correct_answer: boolean default false
     sync_errors: text
     sync_job_sequence_id: bigint
     sync_warnings: text
