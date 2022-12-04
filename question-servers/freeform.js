@@ -547,87 +547,99 @@ module.exports = {
     ]);
 
     const visitNode = async (node) => {
-      if (node.tagName && questionElements.has(node.tagName)) {
-        const elementName = node.tagName;
-        const elementFile = module.exports.getElementController(elementName, context);
-        if (phase === 'render' && !_.includes(renderedElementNames, elementName)) {
-          renderedElementNames.push(elementName);
-        }
-        // Populate the extensions used by this element.
-        data.extensions = [];
-        if (_.has(context.course_element_extensions, elementName)) {
-          data.extensions = context.course_element_extensions[elementName];
-        }
-        // We need to wrap it in another node, since only child nodes
-        // are serialized
-        const serializedNode = parse5.serialize({
-          childNodes: [node],
-        });
-        let ret_val, consoleLog;
-        try {
-          ({ result: ret_val, output: consoleLog } = await module.exports.elementFunction(
-            codeCaller,
-            phase,
-            elementName,
-            serializedNode,
-            data,
-            context
-          ));
-        } catch (e) {
-          // We'll catch this and add it to the course issues list
-          throw new CourseIssueError(`${elementFile}: Error calling ${phase}(): ${e.toString()}`, {
-            cause: e,
-            data: e.data,
-            fatal: true,
+      if (node.tagName) {
+        if (questionElements.has(node.tagName)) {
+          const elementName = node.tagName;
+          const elementFile = module.exports.getElementController(elementName, context);
+          if (phase === 'render' && !_.includes(renderedElementNames, elementName)) {
+            renderedElementNames.push(elementName);
+          }
+          // Populate the extensions used by this element.
+          data.extensions = [];
+          if (_.has(context.course_element_extensions, elementName)) {
+            data.extensions = context.course_element_extensions[elementName];
+          }
+          // We need to wrap it in another node, since only child nodes
+          // are serialized
+          const serializedNode = parse5.serialize({
+            childNodes: [node],
           });
-        }
-
-        // We'll be sneaky and remove the extensions, since they're not used elsewhere.
-        delete data.extensions;
-        delete ret_val.extensions;
-        if (_.isString(consoleLog) && consoleLog.length > 0) {
-          courseIssues.push(
-            new CourseIssueError(`${elementFile}: output logged on console during ${phase}()`, {
-              data: { outputBoth: consoleLog },
-              fatal: false,
-            })
-          );
-        }
-        if (phase === 'render') {
-          if (!_.isString(ret_val)) {
+          let ret_val, consoleLog;
+          try {
+            ({ result: ret_val, output: consoleLog } = await module.exports.elementFunction(
+              codeCaller,
+              phase,
+              elementName,
+              serializedNode,
+              data,
+              context
+            ));
+          } catch (e) {
+            // We'll catch this and add it to the course issues list
             throw new CourseIssueError(
-              `${elementFile}: Error calling ${phase}(): return value is not a string`,
-              { data: ret_val, fatal: true }
+              `${elementFile}: Error calling ${phase}(): ${e.toString()}`,
+              {
+                cause: e,
+                data: e.data,
+                fatal: true,
+              }
             );
           }
-          node = parse5.parseFragment(ret_val);
-        } else if (phase === 'file') {
-          // Convert ret_val from base64 back to buffer (this always works,
-          // whether or not ret_val is valid base64)
-          const buf = Buffer.from(ret_val, 'base64');
-          // If the buffer has non-zero length...
-          if (buf.length > 0) {
-            if (fileData.length > 0) {
-              // If fileData already has non-zero length, throw an error
+
+          // We'll be sneaky and remove the extensions, since they're not used elsewhere.
+          delete data.extensions;
+          delete ret_val.extensions;
+          if (_.isString(consoleLog) && consoleLog.length > 0) {
+            courseIssues.push(
+              new CourseIssueError(`${elementFile}: output logged on console during ${phase}()`, {
+                data: { outputBoth: consoleLog },
+                fatal: false,
+              })
+            );
+          }
+          if (phase === 'render') {
+            if (!_.isString(ret_val)) {
               throw new CourseIssueError(
-                `${elementFile}: Error calling ${phase}(): attempting to overwrite non-empty fileData`,
+                `${elementFile}: Error calling ${phase}(): return value is not a string`,
+                { data: ret_val, fatal: true }
+              );
+            }
+            node = parse5.parseFragment(ret_val);
+          } else if (phase === 'file') {
+            // Convert ret_val from base64 back to buffer (this always works,
+            // whether or not ret_val is valid base64)
+            const buf = Buffer.from(ret_val, 'base64');
+            // If the buffer has non-zero length...
+            if (buf.length > 0) {
+              if (fileData.length > 0) {
+                // If fileData already has non-zero length, throw an error
+                throw new CourseIssueError(
+                  `${elementFile}: Error calling ${phase}(): attempting to overwrite non-empty fileData`,
+                  { fatal: true }
+                );
+              } else {
+                // If not, replace fileData with buffer
+                fileData = buf;
+              }
+            }
+          } else {
+            // the following line is safe because we can't be in multiple copies of this function simultaneously
+            data = ret_val;
+            const checkErr = module.exports.checkData(data, origData, phase);
+            if (checkErr) {
+              throw new CourseIssueError(
+                `${elementFile}: Invalid state after ${phase}(): ${checkErr}`,
                 { fatal: true }
               );
-            } else {
-              // If not, replace fileData with buffer
-              fileData = buf;
             }
           }
-        } else {
-          // the following line is safe because we can't be in multiple copies of this function simultaneously
-          data = ret_val;
-          const checkErr = module.exports.checkData(data, origData, phase);
-          if (checkErr) {
-            throw new CourseIssueError(
-              `${elementFile}: Invalid state after ${phase}(): ${checkErr}`,
-              { fatal: true }
-            );
-          }
+        } else if (typeof node.tagName === 'string' && node.tagName.startsWith('pl-')) {
+          const elementName = node.tagName;
+          const elementFile = module.exports.getElementController(elementName, context);
+          throw new CourseIssueError(
+            `${elementFile}: Invalid pl element ${node.tagName}`,
+            { fatal: true }
+          );
         }
       }
       const newChildren = [];
