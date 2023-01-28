@@ -20,16 +20,20 @@
 </style>
 
 <p>
-  Various new features and quality of life improvements for question creation
-  have been recently deployed. These include new elements, additional features for
-  existing elements, and more utility code to improve the experience of
-  writing custom questions.
+  A major overhaul of manual grading features has just been deployed
+  to all courses. Instructors and TAs now have more flexibility to
+  grade question components manually, and to more easily review and
+  provide feedback on students work.
 </p>
-<!--https://github.com/PrairieLearn/PrairieLearn/commits?author=eliotwrobson-->
-<h2>New Elements</h2>
 <p>
-  New elements consist of the <code class="user-output">pl-hidden-hints</code>,
-  <code class="user-output">pl-big-o-input</code>, and <code class="user-output">pl-dataframe</code>
+  Assessment questions can now be assigned a combination of
+  auto-graded and manual point components. This combination can be
+  used in questions that require some level of human review, such as
+  questions that require a description of the progress to arrive at
+  the result ("show your work"), review of code style and comments in
+  coding questions, or essay-type justification of student
+  answers. Assessments can be set up to use this combination in
+  individual questions:
 </p>
 <pre>
 "zones": [
