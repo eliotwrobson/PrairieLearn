@@ -5,14 +5,28 @@ serve as a hybrid of RFC and initial design discussion.
 
 # Motivation
 
-The initial motivation behind this discussion was to improve the existing autograder.
+The initial motivation behind this discussion was to improve the existing autograder. Rewriting the autograder
+represents a significant scope expansion, which is motivated by the following:
+
+1. The security vulnerabilities in the existing autograder are architectural. In particular, the scoring mechanism
+used by the existing autograder is both easy to exploit and uses unnatural control flow that makes it difficult to
+maintain. Implementing fixes for this requires changes to the way client grader code is written.
+
+2. Outside of security, there is significant demand for changes to the architecture, features, and tooling (including
+the addition of an independent test suite) of the autograder.
+
+3. At a broader level, there is demand for a standalone Python package that autogrades student code (for example,
+see https://pypi.org/project/autograder/). Serving this more general use case allows development of more robust
+features and wider adoption.
 
 # Basic Usage
 
-The new autograder will be backwards compatible with previously written questions, with minor changes in
-the interface to facilitate better security. There will also be additional functionality implemented to
+The new autograder will be __backwards incompatible__ with previously written questions, but changes to the interface
+will be kept at a minimum to facilitate easy migration. There will also be additional functionality implemented to
 streamline certain operations (such as retrieving and checking equality for a symbol with a given name).
 
+In addition, changes to the architecture will allow for uses outside of just the PL ecosystem with the addition of a
+more general CLI.
 ## IO Based Graders
 
 In particular, the new autograder will __not__ be "IO based", since this would introduce a major incompatibility
@@ -20,7 +34,19 @@ with the old autograder. Although this change could facilitate greater security,
 serious roadblock to widespread adoption by existing parts of the PL ecosystem, and thus wouldn't do anything
 to patch the security problems for these courses.
 
-In addition, it's worth noting
+# Security
+
+The following will facilitate greater security in the new autograder:
+
+1. Introduction of code sandboxing features that provide (at least basic) safeguards against malicious code.
+This would include basic safeguards against the use of certain builtin modules (via the [Restricted Python package](https://github.com/zopefoundation/RestrictedPython)), IO rate limiting, and timeouts for individual tests.
+
+2. The addition of security-focused features in CI jobs. These would include use of the [Bandit package](https://bandit.readthedocs.io/en/latest/)
+and tests that assert
+
+# Features
+
+This
 
 -------------------------------------------------------------------------------------------------------------
 
