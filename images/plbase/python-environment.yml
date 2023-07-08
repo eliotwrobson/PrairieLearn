@@ -5,8 +5,8 @@ channels:
  - defaults
 
 dependencies:
-  - r-base==3.6.0
-  - r-essentials==3.6.0
+  - r-base
+  - r-essentials
   - ansi2html==1.8.0
   - chevron==0.14.0
   - Faker==18.11.2

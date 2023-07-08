@@ -59,20 +59,22 @@ bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
 #wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 #./bin/micromamba shell init -s bash -p ~/micromamba
 #source ~/.bashrc
-
+conda install --channel=conda-forge --name=base conda-lock
 
 
 #micromamba install xtensor -c conda-forge
 
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
-    echo "installing R..."
+    #echo "installing R..."
     #micromamba env create -f python-environment.yml
     #micromamba activate prairielearn
     #micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
-    conda env create -f python-environment.yml
+    conda-lock render -p linux-64
+    conda create -n prairielearn --file conda-linux.lock
+    #conda env create -f python-environment.yml
     #python3 -m pip install --no-cache-dir -r /python-requirements.txt
 else
     echo "R package installation is disabled"
