@@ -1,7 +1,9 @@
-name: prairielearn2
+name: prairielearn3
+channel_priority: strict
 channels:
  - conda-forge
  - r
+ - defaults
 
 dependencies:
   - r-base
