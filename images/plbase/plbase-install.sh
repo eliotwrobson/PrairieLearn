@@ -72,7 +72,7 @@ if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     #micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
-    conda-lock install -n prairielearn
+    conda-lock install --name prairielearn conda-lock.yml
     #conda create -n prairielearn --file conda-linux.lock
     #conda env create -f python-environment.yml
     #python3 -m pip install --no-cache-dir -r /python-requirements.txt
