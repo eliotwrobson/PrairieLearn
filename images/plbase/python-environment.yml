@@ -1,0 +1,6 @@
+name: prairielearn
+dependencies:
+  - r
+  - r-base
+  - r-essentials
+  

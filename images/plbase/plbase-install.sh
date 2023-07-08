@@ -62,9 +62,15 @@ wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -
 ./bin/micromamba shell init -s bash -p ~/micromamba
 source ~/.bashrc
 
+
+
+#micromamba install xtensor -c conda-forge
+
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     echo "installing R..."
+    micromamba env create -f python-environment.yml
+    micromamba activate prairielearn
     micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
