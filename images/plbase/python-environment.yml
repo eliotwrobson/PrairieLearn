@@ -1,4 +1,4 @@
-name: prairielearn3
+name: prairielearn
 channels:
  - conda-forge
  - r

@@ -28,9 +28,7 @@ dnf -y install \
     texlive \
     texlive-dvipng \
     texlive-type1cm \
-    tmux \
-    bzip2 \
-    wget
+    tmux
 
 echo "installing node via nvm"
 git clone https://github.com/creationix/nvm.git /nvm
