@@ -6,6 +6,7 @@ COPY plbase-install.sh python-requirements.txt python-environment.yml /
 
 RUN /bin/bash /plbase-install.sh
 
+# Add new environment to bin
 ENV PATH /opt/conda/envs/prairielearn/bin:$PATH
 
 CMD /bin/bash
