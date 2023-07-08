@@ -53,7 +53,9 @@ cd /
 arch=`uname -m`
 # curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
 # bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
-curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+# curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+
 
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
