@@ -55,8 +55,11 @@ arch=`uname -m`
 # curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
 # bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
 # curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
-
+#"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+# From https://waylonwalker.com/install-micromamba/
+wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+./bin/micromamba shell init -s bash -p ~/micromamba
+source ~/.bashrc
 
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
