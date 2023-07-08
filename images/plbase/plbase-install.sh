@@ -28,7 +28,8 @@ dnf -y install \
     texlive \
     texlive-dvipng \
     texlive-type1cm \
-    tmux
+    tmux \
+    bzip2
 
 echo "installing node via nvm"
 git clone https://github.com/creationix/nvm.git /nvm
@@ -60,15 +61,17 @@ arch=`uname -m`
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     echo "installing R..."
-    conda install --channel r r-base r-essentials
+    micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
-    python3 -m pip install --no-cache-dir -r /python-requirements.txt
+    conda env create -f environment.yml
+    #python3 -m pip install --no-cache-dir -r /python-requirements.txt
 else
     echo "R package installation is disabled"
-    sed '/rpy2/d' /python-requirements.txt > /py_req_no_r.txt # Remove rpy2 package.
+    sed '/rpy2/d' /environment.yml > /py_req_no_r.txt # Remove rpy2 package.
     echo "installing Python packages..."
-    python3 -m pip install --no-cache-dir -r /py_req_no_r.txt
+    micromamba env create -f environment.yml
+    #python3 -m pip install --no-cache-dir -r /py_req_no_r.txt
 fi
 
 # Clear various caches to minimize the final image size.
