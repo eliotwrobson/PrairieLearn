@@ -79,3 +79,18 @@ using builtin modules.
 
 5. Add compatibility with other autograding frameworks, such as Canvas and Gradescope. This should be straightforward and only require
 changes to the output.
+
+6. Proper logging that prints messages at the info and debug levels, with the ability to enable debug output if desired. This will make debugging easier while still allowing for relaxed file assumptions.
+
+
+# Decoupling the core autograder and the docker image
+
+The current autograder suffers from unnecessary coupling between the dependencies used by certain courses and the autograder. In short, the docker image containing the autograder has dependencies that are only used by grader code in certain courses, rather than the grader code itself. This coupling means it is more difficult for courses to hand-roll their own autograder image while using the same autograder framework. In addition, this makes it very difficult for anyone using the autograder outside of the docker image (requires copying files).
+
+To remedy this problem, the new autograder will use the following deployment architecture:
+
+- The core autograder code itself will be deployed as a standalone package on PyPI (with features as described above). Parts of the autograder that are configured to grade certain specific data types from external packages (Pandas dataframes, numpy ndarrays, etc.) will be allow these dependencies to be optional. This will make the autograder more lightweight for hand-rolled autograder images (and users of the standalone package outside of a docker container).
+
+- The current Python autograder docker image will then simply add the standalone package as an external dependency, along with other existing external dependencies and tools to ensure backward compatibility.
+
+The main challenge here will be maintaining compatibility with the core PL platform when changes are made to the autograder. The main way of overcoming this will be to use standalone testing of the autograder that mimics usage by the core PL code.
