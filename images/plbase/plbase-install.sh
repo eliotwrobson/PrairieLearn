@@ -71,7 +71,7 @@ if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     echo "installing R..."
     micromamba env create -f python-environment.yml
     micromamba activate prairielearn
-    micromamba install --channel r r-base r-essentials
+    #micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
     conda env create -f environment.yml
