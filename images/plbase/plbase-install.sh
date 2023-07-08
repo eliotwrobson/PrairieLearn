@@ -74,7 +74,7 @@ if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     #micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
-    conda env create -f environment.yml
+    conda env create -f python-environment.yml
     #python3 -m pip install --no-cache-dir -r /python-requirements.txt
 else
     echo "R package installation is disabled"
