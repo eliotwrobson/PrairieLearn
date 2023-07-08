@@ -53,14 +53,15 @@ su postgres -c "initdb -D /var/postgres"
 echo "setting up conda..."
 cd /
 arch=`uname -m`
-# curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
-# bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
+curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
+bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
 # curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 #"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
 # From https://waylonwalker.com/install-micromamba/
-wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-./bin/micromamba shell init -s bash -p ~/micromamba
-source ~/.bashrc
+#wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+#./bin/micromamba shell init -s bash -p ~/micromamba
+#source ~/.bashrc
+conda install -c conda-forge mamba
 
 
 
@@ -69,8 +70,8 @@ source ~/.bashrc
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
     echo "installing R..."
-    micromamba env create -f python-environment.yml
-    micromamba activate prairielearn
+    mamba env create -f python-environment.yml
+    mamba activate prairielearn
     #micromamba install --channel r r-base r-essentials
 
     echo "installing Python packages..."
