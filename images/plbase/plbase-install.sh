@@ -51,8 +51,9 @@ su postgres -c "initdb -D /var/postgres"
 echo "setting up conda..."
 cd /
 arch=`uname -m`
-curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
-bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
+# curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${arch}.sh
+# bash Miniforge3-Linux-${arch}.sh -b -p /usr/local -f
+curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 
 # If R package installation is specifically disabled, we'll avoid installing anything R-related.
 if [[ "${SKIP_R_PACKAGES}" != "yes" ]]; then
