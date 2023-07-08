@@ -1,11 +1,11 @@
 name: prairielearn2
 channels:
  - conda-forge
+ - r
  
 dependencies:
-  #- r
-  #- r-base
-  #- r-essentials
+  - r-base
+  - r-essentials
   - ansi2html==1.8.0
   - black==23.3.0
   - chevron==0.14.0
