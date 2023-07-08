@@ -1,5 +1,4 @@
 name: prairielearn3
-channel_priority: strict
 channels:
  - conda-forge
  - r
