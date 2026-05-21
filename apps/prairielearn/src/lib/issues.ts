@@ -2,7 +2,7 @@ import * as async from 'async';
 import { type Request, type Response } from 'express';
 
 import { HttpStatusError } from '@prairielearn/error';
-import { loadSqlEquiv, queryScalar } from '@prairielearn/postgres';
+import { loadSqlEquiv, queryOptionalRow, queryScalar } from '@prairielearn/postgres';
 import { recursivelyTruncateStrings } from '@prairielearn/sanitize';
 import { IdSchema } from '@prairielearn/zod';
 
@@ -23,6 +23,12 @@ interface IssueData extends IssueForErrorData {
   manuallyReported: boolean;
   courseCaused: boolean;
   systemData: Record<string, any>;
+  /**
+   * If true, the insert is skipped when an open issue with the same question,
+   * instructor_message, and student_message already exists. Use this for
+   * instructor-only warnings to avoid flooding the table across variants.
+   */
+  deduplicateForQuestion?: boolean;
 }
 
 interface ErrorMaybeWithData extends Error {
@@ -46,6 +52,7 @@ export async function insertIssue({
   systemData,
   userId,
   authnUserId,
+  deduplicateForQuestion,
 }: IssueData) {
   // Truncate all strings in the data objects to 1000 characters. This ensures
   // that we don't store too much unnecessary data. This data is here for
@@ -57,33 +64,38 @@ export async function insertIssue({
   // Allow for a higher limit on the system data. This object contains output
   // from the Python subprocess, which can be especially useful for debugging.
   const truncatedSystemData = recursivelyTruncateStrings(systemData, 10000);
-  return await queryScalar(
-    sql.insert_issue,
-    {
-      variant_id: variantId,
-      student_message: studentMessage,
-      instructor_message: instructorMessage,
-      manually_reported: manuallyReported,
-      course_caused: courseCaused,
-      course_data: truncatedCourseData,
-      system_data: truncatedSystemData,
-      user_id: userId,
-      authn_user_id: authnUserId,
-    },
-    IdSchema,
-  );
+  const params = {
+    variant_id: variantId,
+    student_message: studentMessage,
+    instructor_message: instructorMessage,
+    manually_reported: manuallyReported,
+    course_caused: courseCaused,
+    course_data: truncatedCourseData,
+    system_data: truncatedSystemData,
+    user_id: userId,
+    authn_user_id: authnUserId,
+  };
+  if (deduplicateForQuestion) {
+    return await queryOptionalRow(sql.insert_issue_if_no_open_duplicate, params, IdSchema);
+  }
+  return await queryScalar(sql.insert_issue, params, IdSchema);
 }
 
 /**
  * Inserts an issue for a thrown error.
  */
-async function insertIssueForError(err: ErrorMaybeWithData, data: IssueForErrorData) {
+async function insertIssueForError(
+  err: ErrorMaybeWithData,
+  data: IssueForErrorData,
+  deduplicateForQuestion?: boolean,
+) {
   return insertIssue({
     ...data,
     manuallyReported: false,
     courseCaused: true,
     instructorMessage: err.toString(),
     systemData: { stack: err.stack, courseErrData: err.data },
+    deduplicateForQuestion,
   });
 }
 
@@ -110,13 +122,20 @@ export async function writeCourseIssues(
     // for instructor-only issues like Python warnings).
     const issueStudentMessage =
       'studentMessage' in courseErr ? courseErr.studentMessage : studentMessage;
-    await insertIssueForError(courseErr, {
-      variantId: variant.id,
-      studentMessage: issueStudentMessage,
-      courseData,
-      userId: user_id,
-      authnUserId: authn_user_id,
-    });
+    // Instructor-only warnings (studentMessage === null) are deduplicated per
+    // question so the same warning isn't recorded for every student variant.
+    const deduplicateForQuestion = issueStudentMessage === null;
+    await insertIssueForError(
+      courseErr,
+      {
+        variantId: variant.id,
+        studentMessage: issueStudentMessage,
+        courseData,
+        userId: user_id,
+        authnUserId: authn_user_id,
+      },
+      deduplicateForQuestion,
+    );
   });
 }
 
