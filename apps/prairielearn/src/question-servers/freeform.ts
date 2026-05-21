@@ -99,6 +99,7 @@ let courseExtensionsCache: Record<
 class CourseIssueError extends Error {
   data: any;
   fatal: boolean;
+  studentMessage?: string | null;
 
   constructor(
     message: string,
@@ -106,12 +107,14 @@ class CourseIssueError extends Error {
       cause?: Error;
       data?: any;
       fatal: boolean;
+      studentMessage?: string | null;
     },
   ) {
     super(message, { cause: options?.cause });
     this.name = 'CourseIssueError';
     this.data = options?.data;
     this.fatal = options?.fatal ?? false;
+    this.studentMessage = options?.studentMessage;
   }
 }
 
@@ -361,14 +364,14 @@ async function execPythonServer(
     await fs.access(fullFilename, fs.constants.R_OK);
   } catch {
     // server.py does not exist
-    return { result: defaultServerRet(phase, data, html), output: '' };
+    return { result: defaultServerRet(phase, data, html), output: '', warnings: [] };
   }
 
   debug(
     `execPythonServer(): codeCaller.call(pythonFile=${pythonFile}, pythonFunction=${pythonFunction})`,
   );
   try {
-    const { result, output } = await codeCaller.call(
+    const { result, output, warnings } = await codeCaller.call(
       type,
       directory,
       pythonFile,
@@ -376,7 +379,7 @@ async function execPythonServer(
       pythonArgs,
     );
     debug('execPythonServer(): completed');
-    return { result, output };
+    return { result, output, warnings };
   } catch (err: any) {
     if (err instanceof FunctionMissingError) {
       // function wasn't present in server
@@ -384,6 +387,7 @@ async function execPythonServer(
       return {
         result: defaultServerRet(phase, data, html),
         output: '',
+        warnings: [],
       };
     }
     throw err;
@@ -521,6 +525,14 @@ async function processQuestionPhase<T>(
     );
     result = res.result;
     output = res.output;
+    for (const warning of res.warnings) {
+      courseIssues.push(
+        new CourseIssueError(`Python warning during ${phase}(): ${warning}`, {
+          fatal: false,
+          studentMessage: null,
+        }),
+      );
+    }
   } catch (err: any) {
     // Log the error message and any Python output to help diagnose test failures.
     if (config.devMode) {
@@ -665,9 +677,9 @@ async function processQuestionServer<T extends ExecutionData>(
     return { courseIssues, data, html: '', fileData: Buffer.from(''), renderedElementNames: [] };
   }
 
-  let result, output;
+  let result, output, warnings;
   try {
-    ({ result, output } = await execPythonServer(codeCaller, phase, data, html, context));
+    ({ result, output, warnings } = await execPythonServer(codeCaller, phase, data, html, context));
   } catch (err: any) {
     // Log the error message and any Python output to help diagnose test failures.
     if (config.devMode) {
@@ -695,6 +707,16 @@ async function processQuestionServer<T extends ExecutionData>(
       new CourseIssueError(`${serverFile}: output logged on console`, {
         data: { outputBoth: output },
         fatal: false,
+      }),
+    );
+  }
+
+  for (const warning of warnings ?? []) {
+    const serverFile = path.join(context.question_dir, 'server.py');
+    courseIssues.push(
+      new CourseIssueError(`${serverFile}: Python warning: ${warning}`, {
+        fatal: false,
+        studentMessage: null,
       }),
     );
   }

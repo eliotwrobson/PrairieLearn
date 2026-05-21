@@ -95,7 +95,7 @@ export class CodeCallerNative implements CodeCaller {
   state: CodeCallerState;
   uuid: string;
   child: CodeCallerNativeChildProcess | null;
-  callback: ((err: CodeCallerError | null, data?: any, output?: string) => void) | null;
+  callback: ((err: CodeCallerError | null, data?: any, output?: string, warnings?: string[]) => void) | null;
   timeoutID: NodeJS.Timeout | null;
   options: CodeCallerNativeOptionsInternal;
   outputStdout: string[];
@@ -230,11 +230,11 @@ export class CodeCallerNative implements CodeCaller {
     const callDataString = JSON.stringify(callData);
 
     const promise = withResolvers<CodeCallerResult>();
-    this.callback = (err, data, output) => {
+    this.callback = (err, data, output, warnings) => {
       if (err) {
         promise.reject(err);
       } else {
-        promise.resolve({ result: data, output: output ?? '' });
+        promise.resolve({ result: data, output: output ?? '', warnings: warnings ?? [] });
       }
     };
 
@@ -548,12 +548,12 @@ export class CodeCallerNative implements CodeCaller {
     this.debug('exit _clearRestartTimeout()');
   }
 
-  _callCallback(err: CodeCallerError | null, data?: any, output?: string) {
+  _callCallback(err: CodeCallerError | null, data?: any, output?: string, warnings?: string[]) {
     this.debug('enter _callCallback()');
     if (err) err.data = this._errorData();
     const c = this.callback;
     this.callback = null;
-    c?.(err, data, output);
+    c?.(err, data, output, warnings);
     this.debug('exit _callCallback()');
   }
 
@@ -564,6 +564,7 @@ export class CodeCallerNative implements CodeCaller {
     let data: {
       val: any;
       present: boolean;
+      warnings?: string[];
     } | null = null;
     let err: Error | null = null;
     try {
@@ -578,7 +579,7 @@ export class CodeCallerNative implements CodeCaller {
     } else {
       this.state = WAITING;
       if (data?.present) {
-        this._callCallback(null, data.val, this.outputBoth.join(''));
+        this._callCallback(null, data.val, this.outputBoth.join(''), data.warnings ?? []);
       } else {
         this._callCallback(new FunctionMissingError('Function not found in module'));
       }

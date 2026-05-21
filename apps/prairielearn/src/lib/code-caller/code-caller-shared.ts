@@ -8,6 +8,7 @@ export class FunctionMissingError extends Error {
 export interface CodeCallerResult {
   result: any;
   output: string;
+  warnings: string[];
 }
 
 export type CallType =

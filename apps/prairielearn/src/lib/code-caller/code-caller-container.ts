@@ -130,7 +130,7 @@ export class CodeCallerContainer implements CodeCaller {
   state: CallerState;
   uuid: string;
   container: Container | null;
-  callback: ((err: Error | null, data?: any, output?: string) => void) | null;
+  callback: ((err: Error | null, data?: any, output?: string, warnings?: string[]) => void) | null;
   timeoutID: NodeJS.Timeout | null;
   callCount: number;
   hasBindMount: boolean;
@@ -278,11 +278,11 @@ export class CodeCallerContainer implements CodeCaller {
     this.outputBoth = '';
 
     const promise = withResolvers<CodeCallerResult>();
-    this.callback = (err, result, output) => {
+    this.callback = (err, result, output, warnings) => {
       if (err) {
         promise.reject(err);
       } else {
-        promise.resolve({ result, output: output ?? '' });
+        promise.resolve({ result, output: output ?? '', warnings: warnings ?? [] });
       }
     };
 
@@ -529,12 +529,12 @@ export class CodeCallerContainer implements CodeCaller {
     this.debug('exit _handleContainerExit()');
   }
 
-  _callCallback(err: (Error & { data?: any }) | null, data?: any, output?: string) {
+  _callCallback(err: (Error & { data?: any }) | null, data?: any, output?: string, warnings?: string[]) {
     this.debug('enter _callCallback()');
     if (err) err.data = this._errorData();
     const c = this.callback;
     this.callback = null;
-    c?.(err, data, output);
+    c?.(err, data, output, warnings);
     this.debug('exit _callCallback()');
   }
 
@@ -548,6 +548,7 @@ export class CodeCallerContainer implements CodeCaller {
       functionMissing?: boolean;
       data: any;
       output: string;
+      warnings?: string[];
     } | null = null;
     let err: Error | null = null;
     try {
@@ -568,7 +569,7 @@ export class CodeCallerContainer implements CodeCaller {
       if (data?.functionMissing) {
         this._callCallback(new FunctionMissingError('Function not found in module'));
       } else {
-        this._callCallback(null, data?.data, data?.output || '');
+        this._callCallback(null, data?.data, data?.output || '', data?.warnings ?? []);
       }
     }
 

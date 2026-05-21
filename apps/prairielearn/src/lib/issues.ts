@@ -27,6 +27,8 @@ interface IssueData extends IssueForErrorData {
 
 interface ErrorMaybeWithData extends Error {
   data?: any;
+  /** If present (including null), overrides the shared studentMessage for this specific issue. */
+  studentMessage?: string | null;
 }
 
 const sql = loadSqlEquiv(import.meta.url);
@@ -104,9 +106,13 @@ export async function writeCourseIssues(
   courseData: Record<string, any>,
 ) {
   await async.eachSeries(courseIssues, async (courseErr) => {
+    // Allow individual issues to override the shared student message (e.g., null
+    // for instructor-only issues like Python warnings).
+    const issueStudentMessage =
+      'studentMessage' in courseErr ? courseErr.studentMessage : studentMessage;
     await insertIssueForError(courseErr, {
       variantId: variant.id,
-      studentMessage,
+      studentMessage: issueStudentMessage,
       courseData,
       userId: user_id,
       authnUserId: authn_user_id,

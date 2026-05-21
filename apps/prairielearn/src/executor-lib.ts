@@ -20,6 +20,7 @@ export interface ExecutorResults {
   errorData?: ErrorData;
   data?: any;
   output?: string;
+  warnings?: string[];
   functionMissing?: boolean;
   needsFullRestart: boolean;
 }
@@ -75,9 +76,9 @@ export async function handleInput(
     return { needsFullRestart: true };
   }
 
-  let result: any, output: string | undefined, callErr: Error | CodeCallerError | undefined;
+  let result: any, output: string | undefined, warnings: string[] | undefined, callErr: Error | CodeCallerError | undefined;
   try {
-    ({ result, output } = await codeCaller.call(
+    ({ result, output, warnings } = await codeCaller.call(
       request.type,
       request.directory,
       request.file,
@@ -96,6 +97,7 @@ export async function handleInput(
     errorData: callErr && !functionMissing ? (callErr as CodeCallerError).data : undefined,
     data: result,
     output,
+    warnings,
     functionMissing,
     needsFullRestart: false,
   };

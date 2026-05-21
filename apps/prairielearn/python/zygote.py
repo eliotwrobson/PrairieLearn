@@ -357,7 +357,28 @@ def worker_loop() -> None:
                 context = args[0]
                 data = args[1]
 
-                result, processed_elements = question_phases.process(fcn, data, context)
+                with warnings.catch_warnings(record=True) as captured_warnings:
+                    # Re-apply suppressed filters so they take precedence over
+                    # the "always" filter that catch_warnings(record=True) inserts.
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=SyntaxWarning,
+                        message=r"invalid escape sequence .*",
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=DeprecationWarning,
+                        message=r".*multi-threaded.*fork\(\).*",
+                    )
+                    result, processed_elements = question_phases.process(fcn, data, context)
+
+                instructor_warnings = list(
+                    dict.fromkeys(
+                        warnings.formatwarning(w.message, w.category, w.filename, w.lineno, w.line)
+                        for w in captured_warnings
+                    )
+                )
+
                 val = {
                     "html": result if fcn == "render" else None,
                     "file": result if fcn == "file" else None,
@@ -370,7 +391,7 @@ def worker_loop() -> None:
                 sys.stdout.flush()
 
                 # write the return value (JSON on a single line)
-                outf.write(try_dumps({"present": True, "val": val}))
+                outf.write(try_dumps({"present": True, "val": val, "warnings": instructor_warnings}))
                 outf.write("\n")
                 outf.flush()
 
@@ -401,7 +422,27 @@ def worker_loop() -> None:
                     args.insert(1, None)
 
                 # call the desired function in the loaded module
-                val = method(*args)
+                with warnings.catch_warnings(record=True) as captured_warnings:
+                    # Re-apply suppressed filters so they take precedence over
+                    # the "always" filter that catch_warnings(record=True) inserts.
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=SyntaxWarning,
+                        message=r"invalid escape sequence .*",
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=DeprecationWarning,
+                        message=r".*multi-threaded.*fork\(\).*",
+                    )
+                    val = method(*args)
+
+                instructor_warnings = list(
+                    dict.fromkeys(
+                        warnings.formatwarning(w.message, w.category, w.filename, w.lineno, w.line)
+                        for w in captured_warnings
+                    )
+                )
 
                 if fcn == "file":
                     # if val is None, replace it with empty string
@@ -423,11 +464,13 @@ def worker_loop() -> None:
                 if fcn not in ("file", "render"):
                     if val is None or val is args[-1]:
                         json_outp = try_dumps(
-                            {"present": True, "val": args[-1]}, allow_nan=False
+                            {"present": True, "val": args[-1], "warnings": instructor_warnings},
+                            allow_nan=False,
                         )
                     else:
                         json_outp = try_dumps(
-                            {"present": True, "val": val}, allow_nan=False
+                            {"present": True, "val": val, "warnings": instructor_warnings},
+                            allow_nan=False,
                         )
 
                         # We'll only actually complain if the function returned
@@ -446,7 +489,8 @@ def worker_loop() -> None:
                         )
                 else:
                     json_outp = try_dumps(
-                        {"present": True, "val": val}, allow_nan=False
+                        {"present": True, "val": val, "warnings": instructor_warnings},
+                        allow_nan=False,
                     )
             else:
                 # the function wasn't present, so report this
